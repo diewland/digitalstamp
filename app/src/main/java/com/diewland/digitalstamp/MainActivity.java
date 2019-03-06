@@ -2,21 +2,42 @@ package com.diewland.digitalstamp;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MotionEvent;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     String TAG = "DIEWLAND";
+    double threshold = 10;
 
-    // tools
+    TextView tv_msg;
+    TextView tv_debug;
 
-    private double calc_distance(int x1, int y1, int x2, int y2){
-        double dx = Math.pow(x2 - x1, 2);
-        double dy = Math.pow(y2 - y1, 2);
-        return Math.sqrt(dx + dy);
+    // (Sample) templates
+    ArrayList<Integer[]> rect = new ArrayList<Integer[]>(){{
+        add(new Integer[]{ 0, 0 });
+        add(new Integer[]{ 0, 500 });
+        add(new Integer[]{ 500, 0 });
+        add(new Integer[]{ 500, 500 });
+    }};
+    ArrayList<Integer[]> tri = new ArrayList<Integer[]>(){{
+        add(new Integer[]{ 0, 0 });
+        add(new Integer[]{ 0, 500 });
+        add(new Integer[]{ 500, 0 });
+    }};
+
+    private void detect_patterns(ArrayList<Integer[]> xys){
+        if(Tool.calc_diff2(xys, tri) < threshold){ // check tri
+            tv_msg.setText("Detected => Triangle");
+        }
+        else if(Tool.calc_diff2(xys, rect) < threshold){ // check rect
+            tv_msg.setText("Detected => Rectangle");
+        }
+        else { // set blank as default
+            tv_msg.setText("");
+        }
     }
 
     // events
@@ -25,30 +46,27 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        tv_msg = (TextView)findViewById(R.id.tv_msg);
+        tv_debug = (TextView)findViewById(R.id.tv_debug);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        // reset debug text
+        tv_debug.setText("");
 
+        // collect list of xy
         ArrayList<Integer[]> xys = new ArrayList<Integer[]>();
-
         int pointCount = event.getPointerCount();
-        // Log.d(TAG, "found " + pointCount + " touches");
-
         for (int i = 0; i < pointCount; i++) {
             int x = (int) event.getX(i);
             int y = (int) event.getY(i);
-
-            // Log.d(TAG, "[" + i + "] " + x + ", " + y);
             xys.add(new Integer[]{ x, y });
+            tv_debug.append("[" + i + "] " + x + ", " + y + "\n");
         }
 
-        for(Integer[] xy : xys){
-            Log.d(TAG, xy[0] + ", " + xy[1]);
-        }
-
-        // TODO full scan distance
-        // TODO sort distance
+        // detect patterns
+        detect_patterns(xys);
 
         return false;
     }
